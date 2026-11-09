@@ -1,0 +1,14 @@
+# === Exemptions Gitleaks ===
+# Décidé par : <ton nom> | Date : 2026-11-09 | Revue : fin du projet
+
+# FAUX POSITIFS (ce n'est pas un secret)
+# routes/login.ts:66 : appel de fonction d'un challenge
+routes/login.ts:generic-api-key:66
+# faucet.component.ts:34 : adresse publique d'un contrat blockchain
+frontend/src/app/faucet/faucet.component.ts:generic-api-key:34
+
+# RISQUE ACCEPTÉ (vrais secrets, mais app volontairement vulnérable)
+# En production : rotation de la clé + stockage dans Vault, aucune exemption.
+lib/insecurity.ts:private-key:21
+terraform/networking.tf:private-key:171
+infrastructure/terraform/networking.tf:private-key:171
