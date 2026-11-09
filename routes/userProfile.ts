@@ -63,7 +63,7 @@ export function getUserProfile () {
             throw new Error('Username is null')
           }
           // nosemgrep: javascript.lang.security.audit.code-string-concat.code-string-concat
-// Risque accepté : eval volontaire (challenge Juice Shop). Décidé par <manar>, 2026-11-09.
+// Risque accepté : eval volontaire (challenge Juice Shop). Décidé par manar , 2026-11-09.
           username = eval(code) // eslint-disable-line no-eval
         } catch (err) {
           username = '\\' + username
