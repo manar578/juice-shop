@@ -24,6 +24,20 @@ pipeline {
                 '''
             }
         }
+                stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t ${IMAGE} .'
+            }
+        }
+
+        stage('Docker Image Scan (Trivy)') {
+            steps {
+                sh '''
+                  trivy image --format json --output ${REPORTS}/trivy-image.json ${IMAGE}
+                  trivy image --severity CRITICAL --ignore-unfixed --exit-code 0 ${IMAGE}
+                '''
+            }
+        }
 
                stage('SCA - Dépendances (Trivy)') {
             steps {
