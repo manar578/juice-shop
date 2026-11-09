@@ -1,0 +1,14 @@
+# Exemption documentée : Juice Shop est une application volontairement vulnérable.
+# Périmètre exempté : fichiers de tests et données d'entraînement uniquement.
+# Le code applicatif (lib/, routes/) reste scanné.
+# Décidé par : <ton nom> | Date : 2026-11-09 | Revue : fin du projet
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fichiers de test et données d'entraînement de Juice Shop"
+paths = [
+  '''test/.*''',
+  '''frontend/src/app/.*\.spec\.ts''',
+  '''data/static/users\.yml''',
+]
