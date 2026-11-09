@@ -22,11 +22,12 @@ pipeline {
             }
         }
 
-        // GATE 1 : secrets (toute fuite détectée bloque, sauf .gitleaksignore)
+        // GATE 1 : secrets (toute fuite détectée bloque, sauf exemptions
+        // documentées dans .gitleaks.toml et .gitleaksignore)
         stage('Secrets Scan (Gitleaks)') {
             steps {
                 sh '''
-                  gitleaks detect --source . --no-git \
+                  gitleaks detect --source . --no-git --config .gitleaks.toml \
                     --report-format json --report-path ${REPORTS}/gitleaks.json \
                     --exit-code ${GATE}
                 '''
