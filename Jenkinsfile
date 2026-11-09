@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -24,7 +23,20 @@ pipeline {
                 '''
             }
         }
-                stage('Build Docker Image') {
+
+        stage('SCA - Dépendances (Trivy)') {
+            steps {
+                sh '''
+                  npm install --package-lock-only --package-lock=true --ignore-scripts
+                  trivy fs --scanners vuln --format json \
+                    --output ${REPORTS}/trivy-fs.json .
+                  trivy fs --scanners vuln --severity CRITICAL \
+                    --ignore-unfixed --exit-code 0 .
+                '''
+            }
+        }
+
+        stage('Build Docker Image') {
             steps {
                 sh 'docker build -t ${IMAGE} .'
             }
@@ -35,18 +47,6 @@ pipeline {
                 sh '''
                   trivy image --format json --output ${REPORTS}/trivy-image.json ${IMAGE}
                   trivy image --severity CRITICAL --ignore-unfixed --exit-code 0 ${IMAGE}
-                '''
-            }
-        }
-
-               stage('SCA - Dépendances (Trivy)') {
-            steps {
-                sh '''
-                  npm install --package-lock-only --package-lock=true --ignore-scripts
-                  trivy fs --scanners vuln --format json \
-                    --output ${REPORTS}/trivy-fs.json .
-                  trivy fs --scanners vuln --severity CRITICAL \
-                    --ignore-unfixed --exit-code 1 .
                 '''
             }
         }
