@@ -63,7 +63,6 @@ export function getUserProfile () {
             throw new Error('Username is null')
           }
           // nosemgrep: javascript.lang.security.audit.code-string-concat.code-string-concat
-
           username = eval(code) // eslint-disable-line no-eval
         } catch (err) {
           username = '\\' + username
