@@ -24,6 +24,16 @@ pipeline {
             }
         }
 
+        stage('SAST (Semgrep)') {
+            steps {
+                sh '''
+                  semgrep scan --config p/owasp-top-ten --config p/nodejs \
+                    --json --output ${REPORTS}/semgrep.json \
+                    --metrics=off routes lib server.ts
+                '''
+            }
+        }
+
         stage('SCA - Dépendances (Trivy)') {
             steps {
                 sh '''
@@ -36,6 +46,7 @@ pipeline {
             }
         }
 
+        /* Stages Docker désactivés temporairement pour tester Semgrep rapidement
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t ${IMAGE} .'
@@ -50,6 +61,7 @@ pipeline {
                 '''
             }
         }
+        */
     }
 
     post {
