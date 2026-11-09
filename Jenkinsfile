@@ -83,4 +83,41 @@ pipeline {
         stage('Deploy Staging') {
             steps {
                 sh '''
-                  docker rm -f
+                  docker rm -f juice-staging || true
+                  docker run -d --name juice-staging -p 3001:3000 ${IMAGE}
+                  sleep 30
+                  curl -sf http://localhost:3001 > /dev/null
+                '''
+            }
+        }
+
+        // GATE 5 : DAST (une alerte de risque High bloque ; Medium/Low sont seulement rapportées)
+        stage('DAST (OWASP ZAP)') {
+            steps {
+                sh '''
+                  chmod 777 ${REPORTS}
+                  docker run --rm --network host -v $(pwd)/${REPORTS}:/zap/wrk:rw \
+                    ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+                    -t http://localhost:3001 -r zap-report.html -J zap-report.json -I
+
+                  python3 -c "
+import json, sys
+d = json.load(open('${REPORTS}/zap-report.json'))
+high = [a['name'] for s in d['site'] for a in s['alerts'] if int(a['riskcode']) >= 3]
+print('Alertes High :', high)
+sys.exit(1 if (high and '${GATE}' == '1') else 0)
+"
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker rm -f juice-staging || true'
+            archiveArtifacts artifacts: 'reports/**', allowEmptyArchive: true
+        }
+        failure { echo 'Pipeline BLOQUÉ par une quality gate de sécurité.' }
+        success { echo 'Toutes les quality gates sont passées.' }
+    }
+}
