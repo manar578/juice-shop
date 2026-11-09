@@ -1,0 +1,17 @@
+# === Exemptions Trivy (SCA) ===
+# Décidé par : Manar | Date : 2026-11-09 | Revue : fin du projet
+# Justification : dépendances volontairement vulnérables de Juice Shop (app de formation).
+# En production : mise à jour des dépendances obligatoire, aucune exemption.
+
+# jsonwebtoken 0.1.0 et 0.4.0 -> 4.2.2 (challenges JWT forgés)
+CVE-2015-9235
+
+# lodash 2.4.2 -> 4.17.12
+CVE-2019-10744
+
+# crypto-js 3.3.0 -> 4.2.0 / 4.0.0
+CVE-2023-46233
+CVE-2026-71851
+
+# tar 6.2.1 -> 7.5.19
+CVE-2026-59873
