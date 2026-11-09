@@ -34,7 +34,7 @@ pipeline {
             }
         }
 
-        // GATE 2 : SAST (findings de sévérité ERROR bloquent)
+        // GATE 2 : SAST (findings de sévérité ERROR bloquent, sauf nosemgrep documentés)
         stage('SAST (Semgrep)') {
             steps {
                 sh '''
@@ -50,7 +50,7 @@ pipeline {
             }
         }
 
-        // GATE 3 : SCA (CRITICAL, CVSS >= 9.0, correctif disponible)
+        // GATE 3 : SCA (CRITICAL, correctif disponible, sauf .trivyignore)
         stage('SCA - Dépendances (Trivy)') {
             steps {
                 sh '''
@@ -69,7 +69,7 @@ pipeline {
             }
         }
 
-        // GATE 4 : image Docker
+        // GATE 4 : image Docker (CRITICAL, correctif disponible)
         stage('Docker Image Scan (Trivy)') {
             steps {
                 sh '''
@@ -83,34 +83,4 @@ pipeline {
         stage('Deploy Staging') {
             steps {
                 sh '''
-                  docker rm -f juice-staging || true
-                  docker run -d --name juice-staging -p 3001:3000 ${IMAGE}
-                  sleep 30
-                  curl -sf http://localhost:3001 > /dev/null
-                '''
-            }
-        }
-
-        // GATE 5 : DAST (alertes de niveau FAIL bloquent ; sans -I)
-        stage('DAST (OWASP ZAP)') {
-            steps {
-                sh '''
-                  chmod 777 ${REPORTS}
-                  if [ "${GATE}" = "1" ]; then OPT=""; else OPT="-I"; fi
-                  docker run --rm --network host -v $(pwd)/${REPORTS}:/zap/wrk:rw \
-                    ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
-                    -t http://localhost:3001 -r zap-report.html -J zap-report.json $OPT
-                '''
-            }
-        }
-    }
-
-    post {
-        always {
-            sh 'docker rm -f juice-staging || true'
-            archiveArtifacts artifacts: 'reports/**', allowEmptyArchive: true
-        }
-        failure { echo 'Pipeline BLOQUÉ par une quality gate de sécurité.' }
-        success { echo 'Toutes les quality gates sont passées.' }
-    }
-}
+                  docker rm -f
