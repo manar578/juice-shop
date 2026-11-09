@@ -25,9 +25,10 @@ pipeline {
             }
         }
 
-        stage('SCA - Dépendances (Trivy)') {
+               stage('SCA - Dépendances (Trivy)') {
             steps {
                 sh '''
+                  npm install --package-lock-only --package-lock=true --ignore-scripts
                   trivy fs --scanners vuln --format json \
                     --output ${REPORTS}/trivy-fs.json .
                   trivy fs --scanners vuln --severity CRITICAL \
