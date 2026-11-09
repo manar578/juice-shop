@@ -10,7 +10,9 @@ pipeline {
         stage('Checkout GitHub') {
             steps {
                 checkout scm
-                sh 'mkdir -p ${REPORTS}'
+                // Nettoie les fichiers des builds précédents (évite un gitleaks.json de 15 Mo)
+                sh 'git clean -fdx -e reports/ || true'
+                sh 'rm -rf ${REPORTS} && mkdir -p ${REPORTS}'
             }
         }
 
@@ -46,7 +48,6 @@ pipeline {
             }
         }
 
-        /* Stages Docker désactivés temporairement pour tester Semgrep rapidement
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t ${IMAGE} .'
@@ -61,11 +62,33 @@ pipeline {
                 '''
             }
         }
-        */
+
+        stage('Deploy Staging') {
+            steps {
+                sh '''
+                  docker rm -f juice-staging || true
+                  docker run -d --name juice-staging -p 3001:3000 ${IMAGE}
+                  sleep 30
+                  curl -sf http://localhost:3001 > /dev/null
+                '''
+            }
+        }
+
+        stage('DAST (OWASP ZAP)') {
+            steps {
+                sh '''
+                  chmod 777 ${REPORTS}
+                  docker run --rm --network host -v $(pwd)/${REPORTS}:/zap/wrk:rw \
+                    ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+                    -t http://localhost:3001 -r zap-report.html -J zap-report.json -I
+                '''
+            }
+        }
     }
 
     post {
         always {
+            sh 'docker rm -f juice-staging || true'
             archiveArtifacts artifacts: 'reports/**', allowEmptyArchive: true
         }
         failure { echo 'Pipeline BLOQUÉ par une quality gate.' }
