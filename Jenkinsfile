@@ -108,6 +108,21 @@ sys.exit(1 if (high and '${GATE}' == '1') else 0)
                 '''
             }
         }
+
+        // DEPLOIEMENT : atteint seulement si TOUS les contrôles précédents sont verts.
+        // L'application reste en ligne sur le port 3002 après le build.
+        stage('Deploy (port 3002)') {
+            when { expression { params.ENFORCE_GATES } }
+            steps {
+                sh '''
+                  docker rm -f juice-prod || true
+                  docker run -d --name juice-prod --restart unless-stopped -p 3002:3000 ${IMAGE}
+                  sleep 30
+                  curl -sf http://localhost:3002 > /dev/null
+                  echo "Application déployée : http://$(hostname -I | awk '{print $1}'):3002"
+                '''
+            }
+        }
     }
 
     post {
@@ -122,7 +137,7 @@ sys.exit(1 if (high and '${GATE}' == '1') else 0)
                  body: "Le pipeline DevSecOps a été bloqué par une quality gate.\n\nJob : ${env.JOB_NAME}\nBuild : #${env.BUILD_NUMBER}\nConsole : ${env.BUILD_URL}console\nRapports : ${env.BUILD_URL}artifact/"
         }
         success {
-            echo 'Toutes les quality gates sont passées.'
+            echo 'Toutes les quality gates sont passées, application déployée sur le port 3002.'
         }
     }
 }
