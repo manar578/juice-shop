@@ -9,7 +9,6 @@ pipeline {
     environment {
         REPORTS = 'reports'
         IMAGE   = "juice-shop-local:${env.BUILD_NUMBER}"
-        // exit code utilisé par les gates : 1 si bloquant, 0 sinon
         GATE    = "${params.ENFORCE_GATES ? '1' : '0'}"
     }
 
@@ -22,8 +21,7 @@ pipeline {
             }
         }
 
-        // GATE 1 : secrets (toute fuite détectée bloque, sauf exemptions
-        // documentées dans .gitleaks.toml et .gitleaksignore)
+        // GATE 1 : secrets (exemptions dans .gitleaks.toml et .gitleaksignore)
         stage('Secrets Scan (Gitleaks)') {
             steps {
                 sh '''
@@ -34,7 +32,7 @@ pipeline {
             }
         }
 
-        // GATE 2 : SAST (findings de sévérité ERROR bloquent, sauf nosemgrep documentés)
+        // GATE 2 : SAST (ERROR bloque, sauf nosemgrep documentés)
         stage('SAST (Semgrep)') {
             steps {
                 sh '''
@@ -69,7 +67,7 @@ pipeline {
             }
         }
 
-        // GATE 4 : image Docker (CRITICAL, correctif disponible)
+        // GATE 4 : image Docker
         stage('Docker Image Scan (Trivy)') {
             steps {
                 sh '''
@@ -91,7 +89,7 @@ pipeline {
             }
         }
 
-        // GATE 5 : DAST (une alerte de risque High bloque ; Medium/Low sont seulement rapportées)
+        // GATE 5 : DAST (une alerte High bloque ; Medium/Low seulement rapportées)
         stage('DAST (OWASP ZAP)') {
             steps {
                 sh '''
@@ -112,7 +110,7 @@ sys.exit(1 if (high and '${GATE}' == '1') else 0)
         }
     }
 
-      post {
+    post {
         always {
             sh 'docker rm -f juice-staging || true'
             archiveArtifacts artifacts: 'reports/**', allowEmptyArchive: true
@@ -121,16 +119,10 @@ sys.exit(1 if (high and '${GATE}' == '1') else 0)
             echo 'Pipeline BLOQUÉ par une quality gate de sécurité.'
             mail to: 'manaratallah335@gmail.com',
                  subject: "[Jenkins] BLOQUÉ : ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: """Le pipeline DevSecOps a été bloqué par une quality gate.
-
-Job     : ${env.JOB_NAME}
-Build   : #${env.BUILD_NUMBER}
-Détails : ${env.BUILD_URL}console
-Rapports: ${env.BUILD_URL}artifact/
-
-Ouvre la Console Output pour voir quel stage a échoué."""
+                 body: "Le pipeline DevSecOps a été bloqué par une quality gate.\n\nJob : ${env.JOB_NAME}\nBuild : #${env.BUILD_NUMBER}\nConsole : ${env.BUILD_URL}console\nRapports : ${env.BUILD_URL}artifact/"
         }
         success {
             echo 'Toutes les quality gates sont passées.'
         }
     }
+}
