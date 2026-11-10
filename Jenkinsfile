@@ -112,12 +112,25 @@ sys.exit(1 if (high and '${GATE}' == '1') else 0)
         }
     }
 
-    post {
+      post {
         always {
             sh 'docker rm -f juice-staging || true'
             archiveArtifacts artifacts: 'reports/**', allowEmptyArchive: true
         }
-        failure { echo 'Pipeline BLOQUÉ par une quality gate de sécurité.' }
-        success { echo 'Toutes les quality gates sont passées.' }
+        failure {
+            echo 'Pipeline BLOQUÉ par une quality gate de sécurité.'
+            mail to: 'manaratallah335@gmail.com',
+                 subject: "[Jenkins] BLOQUÉ : ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                 body: """Le pipeline DevSecOps a été bloqué par une quality gate.
+
+Job     : ${env.JOB_NAME}
+Build   : #${env.BUILD_NUMBER}
+Détails : ${env.BUILD_URL}console
+Rapports: ${env.BUILD_URL}artifact/
+
+Ouvre la Console Output pour voir quel stage a échoué."""
+        }
+        success {
+            echo 'Toutes les quality gates sont passées.'
+        }
     }
-}
