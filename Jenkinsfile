@@ -125,9 +125,10 @@ sys.exit(1 if (high and '${GATE}' == '1') else 0)
         }
     }
 
-    post {
+       post {
         always {
             sh 'docker rm -f juice-staging || true'
+            sh 'python3 scripts/make_report.py || true'
             archiveArtifacts artifacts: 'reports/**', allowEmptyArchive: true
         }
         failure {
